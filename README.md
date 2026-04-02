@@ -190,6 +190,42 @@ Two Codex reviews + Claude synthesis into prioritized action plan.
 3. **Claude** synthesizes both into fix-now / fix-later priorities (→ Codex if unavailable)
 4. Offers auto-fix, manual fix, or ralph fix
 
+### `/omcx:team` — Team Build + Codex Verification
+
+Claude agents build in parallel, Codex reviews each piece. **Cross-model team verification.**
+
+```bash
+/omcx:team 3:executor implement user auth with OAuth2, JWT, and RBAC
+/omcx:team 2:executor add pagination to all API endpoints
+/omcx:team 1:designer,2:executor redesign the settings page
+```
+
+**What happens:**
+1. **Claude agents** build in parallel (standard team-exec)
+2. **Codex** reviews all team output (structured + adversarial)
+3. Findings route: simple → Codex fixes, complex → Claude team fixes
+4. Re-verify until both models agree (max 3 cycles)
+
+**Why this matters:** Standard `/team` uses Claude verifier (same model reviewing itself). This command uses **Codex as a genuinely independent reviewer** — a different model family catches fundamentally different issues.
+
+### `/omcx:race` — Dual-Model Parallel Execution
+
+Same task to Claude AND Codex simultaneously. Compare results, pick the best.
+
+```bash
+/omcx:race implement rate limiter with sliding window
+/omcx:race refactor payment module to support multiple providers
+/omcx:race add input validation to all API endpoints
+```
+
+**What happens:**
+1. **Claude** and **Codex** implement the same task in parallel (isolated worktrees)
+2. Claude compares both results side by side (correctness, quality, simplicity)
+3. User chooses: apply Claude's, apply Codex's, or merge best of both
+4. The losing model reviews the winning implementation (final safety net)
+
+**When to use:** Critical code where you want two perspectives, or when unsure which approach is better.
+
 ### Command Selection Guide
 
 | What you need | Command | Example |
@@ -198,6 +234,8 @@ Two Codex reviews + Claude synthesis into prioritized action plan.
 | Fix something + validate | `/omcx:auto-ralph` | `/omcx:auto-ralph fix failing tests` |
 | Design + implement + review | `/omcx:auto-plan` | `/omcx:auto-plan add caching layer` |
 | Quality check after work | `/omcx:auto-validate` | `/omcx:auto-validate` |
+| Team build + cross-model review | `/omcx:team` | `/omcx:team 3:executor add auth` |
+| Two models compete, best wins | `/omcx:race` | `/omcx:race implement rate limiter` |
 
 ---
 
@@ -335,6 +373,8 @@ omc-codex/
 │   ├── auto-validate.md         # Dual review + synthesis
 │   ├── review.md                # Structured code review
 │   ├── adversarial-review.md    # Adversarial review
+│   ├── team.md                  # Team build + Codex verification
+│   ├── race.md                  # Dual-model parallel execution
 │   ├── rescue.md                # Task delegation
 │   ├── setup.md                 # Setup & review gate
 │   ├── status.md                # Job status
