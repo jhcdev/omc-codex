@@ -40,22 +40,49 @@ Claude and Codex each have distinct strengths. This plugin **assigns each model 
 
 ## Quick Start
 
-```bash
-# 1. Install Codex CLI & authenticate
-npm install -g @openai/codex
-codex auth login
+**One-liner install:**
 
-# 2. Clone the plugin
+```bash
+curl -fsSL https://raw.githubusercontent.com/jhcdev/omc-codex/main/install.sh | bash
+```
+
+This automatically:
+- Clones the plugin to `~/.claude/plugins/marketplaces/omc-codex`
+- Configures `~/.claude/settings.json`
+- Checks Node.js, Codex CLI, and auth status
+- Re-running updates to the latest version
+
+Then in Claude Code:
+
+```bash
+# 1. Reload plugins
+/reload-plugins
+
+# 2. (Optional) Install & auth Codex CLI for full cross-model power
+npm install -g @openai/codex && codex login
+
+# 3. Run your first forge:
+/omcx:forge add search feature to the API
+```
+
+<details>
+<summary>Manual install</summary>
+
+```bash
+# 1. Clone the plugin
 git clone https://github.com/jhcdev/omc-codex.git ~/.claude/plugins/marketplaces/omc-codex
 
-# 3. Add to ~/.claude/settings.json (see Configuration below)
+# 2. Add to ~/.claude/settings.json (see Configuration below)
+
+# 3. Install Codex CLI & authenticate (optional)
+npm install -g @openai/codex
+codex login
 
 # 4. Reload in Claude Code
 /reload-plugins
-
-# 5. Run your first forge — the full cross-model experience:
-/omcx:forge add search feature to the API
 ```
+
+</details>
 
 ### What just happened?
 
