@@ -209,23 +209,24 @@ Scale Claude and Codex agents independently. Each handles tasks matching its str
 
 **Why this matters:** Complex work goes to Claude (multi-file reasoning). Independent scoped tasks go to Codex (fast, sandboxed). Cross-model review catches blind spots that same-model review misses.
 
-### `/omcx:race` — Dual-Model Parallel Execution
+### `/omcx:race` — Multi-Agent Competition
 
-Same task to Claude AND Codex simultaneously. Compare results, pick the best.
+N Claude agents vs M Codex agents solve the same task independently. Compare all results.
 
 ```bash
-/omcx:race implement rate limiter with sliding window
-/omcx:race refactor payment module to support multiple providers
-/omcx:race add input validation to all API endpoints
+/omcx:race 2:claude,2:codex implement rate limiter with sliding window
+/omcx:race 3:claude,1:codex design the caching architecture
+/omcx:race 1:claude,3:codex add error handling to all API routes
+/omcx:race implement search with fuzzy matching  # default: 1 vs 1
 ```
 
 **What happens:**
-1. **Claude** and **Codex** implement the same task in parallel (isolated worktrees)
-2. Claude compares both results side by side (correctness, quality, simplicity)
-3. User chooses: apply Claude's, apply Codex's, or merge best of both
-4. The losing model reviews the winning implementation (final safety net)
+1. All N+M racers implement the same task **in parallel** (isolated environments)
+2. Claude compares all results in a tournament-style comparison
+3. User chooses: apply winner, merge best of all, or view all diffs
+4. The model that didn't produce the winner reviews it (cross-model safety net)
 
-**When to use:** Critical code where you want two perspectives, or when unsure which approach is better.
+**When to use:** Critical code, multiple valid approaches, or when you want maximum solution diversity. All racers run in parallel — wall time ≈ slowest single racer.
 
 ### Command Selection Guide
 
