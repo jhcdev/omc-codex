@@ -5,6 +5,12 @@ import { isProbablyText } from "./fs.mjs";
 import { runCommand, runCommandChecked } from "./process.mjs";
 
 const MAX_UNTRACKED_BYTES = 24 * 1024;
+const MAX_DIR_REVIEW_FILES = 200;
+const IGNORED_DIRS = new Set([
+  "node_modules", ".git", ".hg", ".svn", "dist", "build", "out",
+  "__pycache__", ".tox", ".venv", "venv", ".mypy_cache", ".pytest_cache",
+  "target", "vendor", ".next", ".nuxt", "coverage", ".cache"
+]);
 
 function git(cwd, args, options = {}) {
   return runCommand("git", args, { cwd, ...options });
@@ -12,6 +18,11 @@ function git(cwd, args, options = {}) {
 
 function gitChecked(cwd, args, options = {}) {
   return runCommandChecked("git", args, { cwd, ...options });
+}
+
+export function isGitRepository(cwd) {
+  const result = git(cwd, ["rev-parse", "--show-toplevel"]);
+  return result.status === 0 && !result.error;
 }
 
 export function ensureGitRepository(cwd) {
@@ -205,5 +216,75 @@ export function collectReviewContext(cwd, target) {
     branch: currentBranch,
     target,
     ...details
+  };
+}
+
+function walkDirectory(dir, rootDir, files = []) {
+  if (files.length >= MAX_DIR_REVIEW_FILES) {
+    return files;
+  }
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (files.length >= MAX_DIR_REVIEW_FILES) {
+      break;
+    }
+    if (IGNORED_DIRS.has(entry.name) || entry.name.startsWith(".")) {
+      continue;
+    }
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      walkDirectory(fullPath, rootDir, files);
+    } else if (entry.isFile()) {
+      files.push(path.relative(rootDir, fullPath));
+    }
+  }
+  return files;
+}
+
+export function collectDirectoryContext(cwd) {
+  const resolvedCwd = path.resolve(cwd);
+  const files = walkDirectory(resolvedCwd, resolvedCwd);
+  const fileParts = [];
+
+  for (const relativePath of files) {
+    const absolutePath = path.join(resolvedCwd, relativePath);
+    try {
+      const stat = fs.statSync(absolutePath);
+      if (stat.size > MAX_UNTRACKED_BYTES) {
+        fileParts.push(`### ${relativePath}\n(skipped: ${stat.size} bytes exceeds ${MAX_UNTRACKED_BYTES} byte limit)`);
+        continue;
+      }
+      const buffer = fs.readFileSync(absolutePath);
+      if (!isProbablyText(buffer)) {
+        fileParts.push(`### ${relativePath}\n(skipped: binary file)`);
+        continue;
+      }
+      fileParts.push([`### ${relativePath}`, "```", buffer.toString("utf8").trimEnd(), "```"].join("\n"));
+    } catch {
+      fileParts.push(`### ${relativePath}\n(skipped: unreadable)`);
+    }
+  }
+
+  const truncatedNote = files.length >= MAX_DIR_REVIEW_FILES
+    ? `\n\n(listing truncated at ${MAX_DIR_REVIEW_FILES} files)\n`
+    : "";
+
+  const target = {
+    mode: "directory",
+    label: `directory listing of ${resolvedCwd}`,
+    explicit: false
+  };
+
+  return {
+    cwd: resolvedCwd,
+    repoRoot: resolvedCwd,
+    branch: null,
+    target,
+    mode: "directory",
+    summary: `Reviewing ${files.length} file(s) in ${resolvedCwd} (non-git directory).`,
+    content: [
+      formatSection("File Listing", files.join("\n")),
+      formatSection("File Contents", fileParts.join("\n\n") + truncatedNote)
+    ].join("\n")
   };
 }

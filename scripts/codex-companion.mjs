@@ -21,7 +21,7 @@ import {
     runAppServerTurn
   } from "./lib/codex.mjs";
 import { readStdinIfPiped } from "./lib/fs.mjs";
-import { collectReviewContext, ensureGitRepository, resolveReviewTarget } from "./lib/git.mjs";
+import { collectDirectoryContext, collectReviewContext, isGitRepository, resolveReviewTarget } from "./lib/git.mjs";
 import { binaryAvailable, terminateProcessTree } from "./lib/process.mjs";
 import { loadPromptTemplate, interpolateTemplate } from "./lib/prompts.mjs";
 import {
@@ -326,56 +326,74 @@ async function resolveLatestTrackedTaskThread(cwd, options = {}) {
 
 async function executeReviewRun(request) {
   ensureCodexReady(request.cwd);
-  ensureGitRepository(request.cwd);
 
-  const target = resolveReviewTarget(request.cwd, {
-    base: request.base,
-    scope: request.scope
-  });
+  const inGitRepo = isGitRepository(request.cwd);
   const focusText = request.focusText?.trim() ?? "";
   const reviewName = request.reviewName ?? "Review";
-  if (reviewName === "Review") {
-    const reviewTarget = validateNativeReviewRequest(target, focusText);
-    const result = await runAppServerReview(request.cwd, {
-      target: reviewTarget,
-      model: request.model,
-      onProgress: request.onProgress
-    });
-    const payload = {
-      review: reviewName,
-      target,
-      threadId: result.threadId,
-      sourceThreadId: result.sourceThreadId,
-      codex: {
-        status: result.status,
-        stderr: result.stderr,
-        stdout: result.reviewText,
-        reasoning: result.reasoningSummary
-      }
-    };
-    const rendered = renderNativeReviewResult(
-      {
-        status: result.status,
-        stdout: result.reviewText,
-        stderr: result.stderr
-      },
-      { reviewLabel: reviewName, targetLabel: target.label, reasoningSummary: result.reasoningSummary }
-    );
 
-    return {
-      exitStatus: result.status,
-      threadId: result.threadId,
-      turnId: result.turnId,
-      payload,
-      rendered,
-      summary: firstMeaningfulLine(result.reviewText, `${reviewName} completed.`),
-      jobTitle: `Codex ${reviewName}`,
-      jobClass: "review",
-      targetLabel: target.label
-    };
+  if (inGitRepo) {
+    const target = resolveReviewTarget(request.cwd, {
+      base: request.base,
+      scope: request.scope
+    });
+
+    if (reviewName === "Review") {
+      const reviewTarget = validateNativeReviewRequest(target, focusText);
+      const result = await runAppServerReview(request.cwd, {
+        target: reviewTarget,
+        model: request.model,
+        onProgress: request.onProgress
+      });
+      const payload = {
+        review: reviewName,
+        target,
+        threadId: result.threadId,
+        sourceThreadId: result.sourceThreadId,
+        codex: {
+          status: result.status,
+          stderr: result.stderr,
+          stdout: result.reviewText,
+          reasoning: result.reasoningSummary
+        }
+      };
+      const rendered = renderNativeReviewResult(
+        {
+          status: result.status,
+          stdout: result.reviewText,
+          stderr: result.stderr
+        },
+        { reviewLabel: reviewName, targetLabel: target.label, reasoningSummary: result.reasoningSummary }
+      );
+
+      return {
+        exitStatus: result.status,
+        threadId: result.threadId,
+        turnId: result.turnId,
+        payload,
+        rendered,
+        summary: firstMeaningfulLine(result.reviewText, `${reviewName} completed.`),
+        jobTitle: `Codex ${reviewName}`,
+        jobClass: "review",
+        targetLabel: target.label
+      };
+    }
+
+    const context = collectReviewContext(request.cwd, target);
+    return runAdversarialReview(request, context, focusText, reviewName);
   }
 
-  const context = collectReviewContext(request.cwd, target);
+  // Non-git directory: native review requires git, adversarial works on any directory
+  if (reviewName === "Review") {
+    throw new Error(
+      "Native `/codex:review` requires a Git repository. Use `/codex:adversarial-review` instead — it works in any directory."
+    );
+  }
+
+  const context = collectDirectoryContext(request.cwd);
+  return runAdversarialReview(request, context, focusText, reviewName);
+}
+
+async function runAdversarialReview(request, context, focusText, reviewName) {
   const prompt = buildAdversarialReviewPrompt(context, focusText);
   const result = await runAppServerTurn(context.repoRoot, {
     prompt,
@@ -390,7 +408,7 @@ async function executeReviewRun(request) {
   });
   const payload = {
     review: reviewName,
-    target,
+    target: context.target,
     threadId: result.threadId,
     context: {
       repoRoot: context.repoRoot,
@@ -663,12 +681,22 @@ async function handleReviewCommand(argv, config) {
   const cwd = resolveCommandCwd(options);
   const workspaceRoot = resolveCommandWorkspace(options);
   const focusText = positionals.join(" ").trim();
-  const target = resolveReviewTarget(cwd, {
-    base: options.base,
-    scope: options.scope
-  });
 
-  config.validateRequest?.(target, focusText);
+  let target;
+  if (isGitRepository(cwd)) {
+    target = resolveReviewTarget(cwd, {
+      base: options.base,
+      scope: options.scope
+    });
+    config.validateRequest?.(target, focusText);
+  } else {
+    target = {
+      mode: "directory",
+      label: `directory listing of ${cwd}`,
+      explicit: false
+    };
+  }
+
   const metadata = buildReviewJobMetadata(config.reviewName, target);
   const job = createCompanionJob({
     prefix: "review",
