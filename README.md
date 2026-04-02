@@ -190,23 +190,24 @@ Two Codex reviews + Claude synthesis into prioritized action plan.
 3. **Claude** synthesizes both into fix-now / fix-later priorities (→ Codex if unavailable)
 4. Offers auto-fix, manual fix, or ralph fix
 
-### `/omcx:team` — Team Build + Codex Verification
+### `/omcx:team` — Mixed-Model Team
 
-Claude agents build in parallel, Codex reviews each piece. **Cross-model team verification.**
+Scale Claude and Codex agents independently. Each handles tasks matching its strength.
 
 ```bash
-/omcx:team 3:executor implement user auth with OAuth2, JWT, and RBAC
-/omcx:team 2:executor add pagination to all API endpoints
-/omcx:team 1:designer,2:executor redesign the settings page
+/omcx:team 3:claude:executor,2:codex implement auth with OAuth2, JWT, RBAC
+/omcx:team 2:claude,1:codex add pagination and caching
+/omcx:team 1:claude:designer,2:claude:executor,2:codex build admin dashboard
+/omcx:team 5:codex add JSDoc to all exported functions
 ```
 
 **What happens:**
-1. **Claude agents** build in parallel (standard team-exec)
-2. **Codex** reviews all team output (structured + adversarial)
-3. Findings route: simple → Codex fixes, complex → Claude team fixes
-4. Re-verify until both models agree (max 3 cycles)
+1. **Plan** decomposes task and tags each subtask: complex → Claude, scoped → Codex
+2. **Claude agents** and **Codex agents** build in parallel, each on their assigned tasks
+3. **Cross-model review**: Codex reviews Claude's code, Claude reviews Codex's code
+4. Findings route back to the appropriate model for fixes (max 3 cycles)
 
-**Why this matters:** Standard `/team` uses Claude verifier (same model reviewing itself). This command uses **Codex as a genuinely independent reviewer** — a different model family catches fundamentally different issues.
+**Why this matters:** Complex work goes to Claude (multi-file reasoning). Independent scoped tasks go to Codex (fast, sandboxed). Cross-model review catches blind spots that same-model review misses.
 
 ### `/omcx:race` — Dual-Model Parallel Execution
 
