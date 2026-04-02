@@ -228,6 +228,35 @@ N Claude agents vs M Codex agents solve the same task independently. Compare all
 
 **When to use:** Critical code, multiple valid approaches, or when you want maximum solution diversity. All racers run in parallel — wall time ≈ slowest single racer.
 
+### Agent Scaling Reference
+
+Both `/omcx:team` and `/omcx:race` support `N:model[:type]` syntax:
+
+```bash
+# Team: Claude builds complex, Codex builds simple, cross-model review
+/omcx:team 3:claude:executor,2:codex implement full auth system
+
+# Race: 2 Claude vs 2 Codex compete, compare 4 solutions
+/omcx:race 2:claude,2:codex implement rate limiter
+```
+
+| Spec | Meaning |
+|------|---------|
+| `3:claude:executor` | 3 Claude agents, executor type |
+| `2:codex` | 2 Codex workers (write-capable) |
+| `1:claude:designer` | 1 Claude agent, designer type |
+| `3:codex:spark` | 3 Codex workers, spark model |
+
+**Scaling guidelines:**
+
+| Pattern | Config | Use Case |
+|---------|--------|----------|
+| Standard team | `3:claude,2:codex` | Feature work — Claude builds, Codex validates |
+| Build-heavy | `4:claude,1:codex` | Complex interconnected work |
+| Review-heavy | `1:claude,4:codex` | Many independent validations |
+| Classic race | `1:claude,1:codex` | Two perspectives, head-to-head |
+| Tournament | `3:claude,3:codex` | Maximum solution diversity |
+
 ### Command Selection Guide
 
 | What you need | Command | Example |
@@ -236,8 +265,8 @@ N Claude agents vs M Codex agents solve the same task independently. Compare all
 | Fix something + validate | `/omcx:auto-ralph` | `/omcx:auto-ralph fix failing tests` |
 | Design + implement + review | `/omcx:auto-plan` | `/omcx:auto-plan add caching layer` |
 | Quality check after work | `/omcx:auto-validate` | `/omcx:auto-validate` |
-| Team build + cross-model review | `/omcx:team` | `/omcx:team 3:executor add auth` |
-| Two models compete, best wins | `/omcx:race` | `/omcx:race implement rate limiter` |
+| Mixed-model team build | `/omcx:team` | `/omcx:team 3:claude,2:codex add auth` |
+| Multi-agent competition | `/omcx:race` | `/omcx:race 2:claude,2:codex rate limiter` |
 
 ---
 
