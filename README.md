@@ -32,8 +32,8 @@ git clone https://github.com/jhcdev/omc-codex.git ~/.claude/plugins/marketplaces
 
 # 5. Try your first combo — Claude plans, Codex builds, Codex reviews:
 /oh-my-claudecode:plan "add search feature to the API"
-/codex:rescue --write implement search feature per the plan above
-/codex:review --wait
+/omcx:rescue --write implement search feature per the plan above
+/omcx:review --wait
 ```
 
 ## Configuration
@@ -43,7 +43,7 @@ Add to `~/.claude/settings.json`:
 ```json
 {
   "enabledPlugins": {
-    "codex@omc-codex": true
+    "omcx@omc-codex": true
   },
   "extraKnownMarketplaces": {
     "omc-codex": {
@@ -80,13 +80,13 @@ Claude designs, Codex implements, Codex validates. The most common workflow.
 /oh-my-claudecode:plan "add refund feature to payment system"
 
 # Codex implements based on Claude's plan
-/codex:rescue --write implement refund feature per the plan above
+/omcx:rescue --write implement refund feature per the plan above
 
 # Codex structured review (JSON: severity, file, line, confidence)
-/codex:review --wait
+/omcx:review --wait
 
 # Codex fixes review findings
-/codex:rescue --resume fix the issues from the review above
+/omcx:rescue --resume fix the issues from the review above
 ```
 
 **Why this works:** Claude sees the full codebase and designs holistically. Codex executes large-scale implementations faster. The structured review catches what both might miss.
@@ -97,7 +97,7 @@ Codex builds the first draft, omc ralph grinds until tests pass.
 
 ```bash
 # Codex creates the initial implementation
-/codex:rescue --write implement the new caching layer with Redis
+/omcx:rescue --write implement the new caching layer with Redis
 
 # ralph loops until all tests pass (Claude agents with tool access)
 /oh-my-claudecode:ralph "make all caching tests pass. fix and re-run on failure."
@@ -111,10 +111,10 @@ Two different models review the same code from different angles.
 
 ```bash
 # Codex structured review (implementation bugs: null checks, race conditions)
-/codex:review --wait
+/omcx:review --wait
 
 # Codex adversarial review (design flaws: assumptions, rollback safety)
-/codex:adversarial-review --wait
+/omcx:adversarial-review --wait
 
 # Claude synthesizes both reviews into a prioritized action plan
 "Combine both reviews above. Prioritize by impact and split into fix-now vs fix-later."
@@ -128,13 +128,13 @@ Claude agents build while Codex reviews simultaneously.
 
 ```bash
 # Start Codex background review on current changes
-/codex:review --background
+/omcx:review --background
 
 # Meanwhile, omc team runs Claude agents in parallel
 /oh-my-claudecode:team 2:executor "refactor module A, add tests for module B"
 
 # After team finishes, grab the Codex review results
-/codex:result
+/omcx:result
 ```
 
 **Why this works:** No idle time. Codex reviews existing code while Claude agents write new code. Both finish around the same time.
@@ -145,16 +145,16 @@ Claude analyzes, Codex fixes, review gate prevents bad exits.
 
 ```bash
 # Enable auto-review before session end
-/codex:setup --enable-review-gate
+/omcx:setup --enable-review-gate
 
 # Claude deep-dives into the root cause
 /oh-my-claudecode:deep-dive "investigate why API response exceeds 3 seconds"
 
 # Codex applies the fix based on Claude's analysis
-/codex:rescue --write optimize the N+1 query based on the analysis above
+/omcx:rescue --write optimize the N+1 query based on the analysis above
 
 # Continue in the same Codex thread
-/codex:rescue --resume also add database index for the user_id foreign key
+/omcx:rescue --resume also add database index for the user_id foreign key
 
 # Session end → review gate fires automatically (ALLOW/BLOCK)
 ```
@@ -170,8 +170,8 @@ omc autopilot runs the full pipeline, Codex validates with a different model.
 /oh-my-claudecode:autopilot "implement notification system — email, slack, in-app"
 
 # Cross-validate with Codex (GPT-5.x catches what Claude missed)
-/codex:review --wait
-/codex:adversarial-review --wait focusing on failure modes when channels are down
+/omcx:review --wait
+/omcx:adversarial-review --wait focusing on failure modes when channels are down
 ```
 
 **Why this works:** Autopilot uses only Claude agents, which can have blind spots. Codex's different model (GPT-5.x) provides genuine cross-model validation.
@@ -193,58 +193,58 @@ omc autopilot runs the full pipeline, Codex validates with a different model.
 
 These commands automatically chain omc skills with Codex — no manual copy-paste between tools.
 
-### `/codex:auto-ralph`
+### `/omcx:auto-ralph`
 Ralph persistence loop + automatic Codex review. Ralph grinds until done, Codex validates, findings go back to ralph. Repeats until both are satisfied.
 
 ```bash
 # Ralph fixes + Codex reviews in a loop until clean
-/codex:auto-ralph fix all TypeScript errors and make tests pass
+/omcx:auto-ralph fix all TypeScript errors and make tests pass
 
 # Ralph implements + Codex validates the implementation
-/codex:auto-ralph implement retry logic for all API calls
+/omcx:auto-ralph implement retry logic for all API calls
 ```
 
-### `/codex:auto-plan`
+### `/omcx:auto-plan`
 Full cycle: Claude plans → Codex builds → Codex reviews → auto-fix. One command, end-to-end.
 
 ```bash
 # Claude designs, Codex implements, Codex reviews, auto-fixes
-/codex:auto-plan add refund feature to payment system
+/omcx:auto-plan add refund feature to payment system
 
 # Architecture to working code in one command
-/codex:auto-plan implement search API with elasticsearch
+/omcx:auto-plan implement search API with elasticsearch
 ```
 
-### `/codex:auto-validate`
+### `/omcx:auto-validate`
 Cross-model validation after any workflow. Runs Codex structured + adversarial review, Claude synthesizes into a prioritized action plan.
 
 ```bash
 # After finishing any work, cross-validate
-/codex:auto-validate
+/omcx:auto-validate
 
 # Focus on specific area
-/codex:auto-validate auth flow and session handling
+/omcx:auto-validate auth flow and session handling
 ```
 
-### `/codex:pipeline`
+### `/omcx:pipeline`
 Full autonomous pipeline: plan → build → test → review → fix. Chains everything end-to-end.
 
 ```bash
 # Idea to reviewed, tested, working code
-/codex:pipeline implement user notification system with email and slack
+/omcx:pipeline implement user notification system with email and slack
 
 # Full autonomous feature delivery
-/codex:pipeline add rate limiting to all public API endpoints
+/omcx:pipeline add rate limiting to all public API endpoints
 ```
 
 ### Auto-Chaining vs Manual Patterns
 
 | Command | What it chains | When to use |
 |---------|---------------|-------------|
-| `/codex:auto-ralph` | ralph ↔ Codex review loop | Grinding tasks that need quality validation |
-| `/codex:auto-plan` | plan → rescue → review → fix | New features from scratch |
-| `/codex:auto-validate` | review + adversarial + synthesis | Post-work quality check |
-| `/codex:pipeline` | plan → build → test → review → fix | Full autonomous delivery |
+| `/omcx:auto-ralph` | ralph ↔ Codex review loop | Grinding tasks that need quality validation |
+| `/omcx:auto-plan` | plan → rescue → review → fix | New features from scratch |
+| `/omcx:auto-validate` | review + adversarial + synthesis | Post-work quality check |
+| `/omcx:pipeline` | plan → build → test → review → fix | Full autonomous delivery |
 
 All commands fall back to Claude-only agents if Codex is unavailable.
 
@@ -255,39 +255,39 @@ All commands fall back to Claude-only agents if Codex is unavailable.
 ### Code Review
 
 ```bash
-/codex:review --wait                  # Structured review (foreground)
-/codex:review --background            # Run in background
-/codex:review --base main             # Compare against branch
-/codex:review --scope working-tree    # Uncommitted changes only
+/omcx:review --wait                  # Structured review (foreground)
+/omcx:review --background            # Run in background
+/omcx:review --base main             # Compare against branch
+/omcx:review --scope working-tree    # Uncommitted changes only
 
-/codex:adversarial-review --wait      # Challenge design assumptions
-/codex:adversarial-review --wait auth flow and session handling
+/omcx:adversarial-review --wait      # Challenge design assumptions
+/omcx:adversarial-review --wait auth flow and session handling
 ```
 
 ### Task Delegation
 
 ```bash
-/codex:rescue --write <task>          # Delegate with write access
-/codex:rescue <question>              # Read-only investigation
-/codex:rescue --resume <follow-up>    # Continue previous thread
-/codex:rescue --fresh <task>          # Force new thread
-/codex:rescue --background --write <task>
+/omcx:rescue --write <task>          # Delegate with write access
+/omcx:rescue <question>              # Read-only investigation
+/omcx:rescue --resume <follow-up>    # Continue previous thread
+/omcx:rescue --fresh <task>          # Force new thread
+/omcx:rescue --background --write <task>
 ```
 
 ### Review Gate & Setup
 
 ```bash
-/codex:setup                          # Check CLI status + auth
-/codex:setup --enable-review-gate     # Auto-review on session end
-/codex:setup --disable-review-gate    # Disable auto-review
+/omcx:setup                          # Check CLI status + auth
+/omcx:setup --enable-review-gate     # Auto-review on session end
+/omcx:setup --disable-review-gate    # Disable auto-review
 ```
 
 ### Job Management
 
 ```bash
-/codex:status                         # List jobs
-/codex:result                         # Latest result
-/codex:cancel                         # Cancel running job
+/omcx:status                         # List jobs
+/omcx:result                         # Latest result
+/omcx:cancel                         # Cancel running job
 ```
 
 ---
@@ -301,7 +301,7 @@ The plugin **doesn't break** if Codex is missing. It gracefully falls back:
 | Codex not installed | Automatically uses Claude agents instead |
 | Codex not authenticated | Prompts `!codex login` + offers Claude fallback |
 | Codex runtime error | Returns error, omc reroutes to Claude |
-| No omc either | Core commands (`/codex:review`, `rescue`) still work standalone |
+| No omc either | Core commands (`/omcx:review`, `rescue`) still work standalone |
 
 ---
 
@@ -348,7 +348,7 @@ The plugin **doesn't break** if Codex is missing. It gracefully falls back:
 ```
 omc-codex/
 ├── .claude-plugin/              # Plugin + marketplace metadata
-├── commands/                    # /codex:review, rescue, setup, etc.
+├── commands/                    # /omcx:review, rescue, setup, etc.
 ├── agents/codex-rescue.md       # Codex forwarding agent
 ├── skills/                      # Runtime, result handling, prompting
 ├── hooks/hooks.json             # Session lifecycle + review gate

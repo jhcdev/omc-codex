@@ -9,7 +9,7 @@
   },
   "plugins": [
     {
-      "name": "codex",
+      "name": "omcx",
       "description": "Auto-chaining omc + Codex workflows: auto-ralph, auto-plan, auto-validate, pipeline.",
       "version": "1.1.0",
       "author": {
