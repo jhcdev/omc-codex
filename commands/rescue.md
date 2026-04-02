@@ -1,5 +1,5 @@
 ---
-description: Delegate investigation, an explicit fix request, or follow-up rescue work to the Codex rescue subagent
+description: "Delegate quick scoped tasks to Codex — best for focused fixes, diagnosis, and targeted implementation where sandboxed speed matters"
 argument-hint: "[--background|--wait] [--resume|--fresh] [--model <model|spark>] [--effort <none|minimal|low|medium|high|xhigh>] [what Codex should investigate, solve, or continue]"
 context: fork
 allowed-tools: Bash(node:*), AskUserQuestion

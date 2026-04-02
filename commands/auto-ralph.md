@@ -1,90 +1,76 @@
 ---
-description: "Ralph persistence loop with automatic Codex review after each iteration — keeps grinding until tests pass AND review is clean"
+description: "Claude grinds (ralph) → Codex validates — keeps iterating until both agree the work is done"
 argument-hint: "<task description>"
 context: fork
 allowed-tools: "*"
 ---
 
-# Auto-Ralph: ralph + Codex Review Loop
+# Auto-Ralph: Claude Builds + Codex Validates Loop
 
-Run omc ralph with automatic Codex structured review at the end of each iteration.
-Ralph grinds until the task is done, then Codex validates. If Codex finds issues, ralph fixes them.
+Claude does what it's best at: persistent iteration with full context.
+Codex does what it's best at: independent validation from a different perspective.
+The loop continues until both models agree the work is complete.
+
+## Role Assignment
+
+- **Claude (ralph)**: Implementation, debugging, test fixing — deep reasoning with full codebase context
+- **Codex (review)**: Independent validation — structured findings with severity ratings, edge case detection
 
 ## Workflow
 
-1. **Start ralph** with the user's task
-2. When ralph completes an iteration and believes it's done:
-   - Run Codex review automatically
-   - If review verdict is **PASS** (no critical/high severity findings) → done
-   - If review has **critical or high severity** findings → feed findings back to ralph as the next iteration's task
-3. Repeat until both ralph AND Codex review are satisfied
+1. **Claude works** via ralph with the user's task
+2. When ralph believes it's done:
+   - Codex reviews automatically (cross-model validation)
+   - If review is **PASS** (no critical/high) → done
+   - If review has **critical/high** findings → Claude fixes them via ralph
+3. Repeat until both Claude AND Codex are satisfied
 
 ## Execution
 
 User request: $ARGUMENTS
 
-### Step 1: Run ralph
+### Step 1: Claude Implements (ralph)
 
-Invoke the `oh-my-claudecode:ralph` skill with the user's task, but append this instruction:
+Invoke the `oh-my-claudecode:ralph` skill with the user's task, but append:
 
 > After completing the task, DO NOT claim completion yet. Instead, report what you did and stop so Codex can review.
 
-### Step 2: Codex Review
+### Step 2: Codex Validates
 
 After ralph reports completion, run Codex review with large-repo safety:
 
 ```bash
-# Check repo size first to avoid ENOBUFS
-DIFF_SIZE=$(git diff --stat HEAD~1 2>/dev/null | tail -1 | grep -oP '\d+ files? changed' | grep -oP '\d+' || echo "0")
 DIFF_BYTES=$(git diff HEAD~1 2>/dev/null | wc -c || echo "0")
 
 if [ "$DIFF_BYTES" -gt 500000 ]; then
-  # Large diff: review only changed files, chunked
-  CHANGED_FILES=$(git diff --name-only HEAD~1 2>/dev/null | head -50)
-  echo "Large repo detected ($DIFF_BYTES bytes diff). Reviewing changed files only."
   node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" review --wait --json --scope working-tree 2>/dev/null
-  REVIEW_EXIT=$?
 else
   node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" review --wait --json 2>/dev/null
-  REVIEW_EXIT=$?
 fi
 ```
 
-**If Codex review fails with ENOBUFS or any error:**
+**If Codex fails:** fall back to `oh-my-claudecode:architect` agent review.
 
-Do NOT skip review entirely. Instead, fall back to Claude architect verification:
+The validation step **never gets skipped**.
 
-1. Get the list of changed files: `git diff --name-only HEAD~1`
-2. Invoke `oh-my-claudecode:architect` agent with: "Review these changed files for critical issues: [file list]. Check for bugs, security issues, and design problems."
-3. Use the architect's findings as the review result for Step 3.
+### Step 3: Route Findings
 
-This ensures **every iteration gets reviewed** — by Codex if possible, by Claude architect if not.
+- No critical/high findings → report success, done
+- Has critical/high findings:
+  - **Quick fixes** (clear file:line, 1-2 files) → `/codex:rescue --resume` (Codex is fast for surgical fixes)
+  - **Complex fixes** (multi-file, logic rework) → re-invoke ralph (Claude understands the full context)
+  - After fixes, go back to Step 2
 
-### Step 3: Evaluate
+### Step 4: Safety limit
 
-- If review (Codex or architect fallback) finds no critical issues:
-  - Report success to the user with both ralph's output and review summary
-  - Done
+After 5 build↔review cycles, stop and report:
+- What Claude accomplished
+- Remaining Codex findings
+- Let the user decide
 
-- If there are critical or high severity findings:
-  - Format the findings as a fix list
-  - Re-invoke ralph with: "Fix these review findings: [findings list]"
-  - Go back to Step 2
+## Why This Pairing
 
-### Step 4: Max iterations safety
-
-After 5 ralph↔review cycles, stop and report:
-- What ralph accomplished
-- Remaining findings
-- Let the user decide whether to continue
-
-## Fallback Chain
-
-| Condition | Action |
-|-----------|--------|
-| Codex installed + small diff | Codex structured review (preferred) |
-| Codex installed + large diff (>500KB) | Codex review with `--scope working-tree` |
-| Codex fails (ENOBUFS/timeout/error) | Claude architect agent review |
-| Codex not installed | Claude architect agent review |
-
-The review step **never gets skipped**. Quality validation always happens.
+- Claude **builds** because complex tasks need multi-file reasoning and persistent iteration
+- Codex **reviews** because a different model catches blind spots the builder missed
+- Quick fixes go to **Codex** because it's fast and sandboxed for scoped changes
+- Complex fixes go back to **Claude** because it already has full context from building
