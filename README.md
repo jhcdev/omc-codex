@@ -1,5 +1,11 @@
 # omc-codex
 
+<p align="center">
+  <img src="assets/banner.png" alt="Claude vs Codex — Two AI models enter, better code leaves" width="600" />
+  <br />
+  <em>Two AI models enter. Better code leaves.</em>
+</p>
+
 > Bridge between oh-my-claudecode and OpenAI Codex — each model handles what it's best at, with automatic cross-model fallback when either is unavailable.
 
 ## Why omc-codex?
