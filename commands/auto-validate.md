@@ -17,9 +17,16 @@ User request: $ARGUMENTS
 
 Run implementation-focused review:
 
+**Large-repo safety:** Check diff size first:
+```bash
+DIFF_BYTES=$(git diff HEAD~1 2>/dev/null | wc -c || echo "0")
+```
+
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" review --wait --json
 ```
+
+**If Codex fails (ENOBUFS/timeout):** fall back to `oh-my-claudecode:code-reviewer` agent with `git diff --name-only HEAD~1` as input.
 
 Save the result as `structured_review`.
 
@@ -30,6 +37,8 @@ Run design-focused review. If the user provided a focus area, include it:
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" adversarial-review --wait --json $ARGUMENTS
 ```
+
+**If Codex fails:** fall back to `oh-my-claudecode:architect` agent with the same focus area.
 
 Save the result as `adversarial_review`.
 

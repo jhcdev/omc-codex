@@ -38,15 +38,24 @@ Max 5 iterations. Output: passing tests.
 
 Run both reviews:
 
-```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" review --wait --json
-```
+**Large-repo safety:** Before calling Codex, check diff size:
 
 ```bash
+DIFF_BYTES=$(git diff HEAD~1 2>/dev/null | wc -c || echo "0")
+```
+
+If diff > 500KB, use `--scope working-tree` to limit what Codex processes.
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" review --wait --json
 node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" adversarial-review --wait --json
 ```
 
-If Codex unavailable, use `oh-my-claudecode:code-reviewer` agent instead.
+**If Codex fails (ENOBUFS, timeout, or not installed):** fall back to Claude agents:
+- Structured review → `oh-my-claudecode:code-reviewer` agent
+- Adversarial review → `oh-my-claudecode:architect` agent
+
+The review phase **never gets skipped**.
 
 ### Phase 5: Fix (auto-fix loop)
 
