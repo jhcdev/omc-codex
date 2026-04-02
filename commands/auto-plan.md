@@ -1,5 +1,5 @@
 ---
-description: "Claude plans & builds → Codex reviews → auto-fix loop — each model does what it's best at"
+description: "Claude plans & builds → Codex reviews → auto-fix — with automatic cross-model fallback when either is unavailable"
 argument-hint: "<feature or task description>"
 context: fork
 allowed-tools: "*"
@@ -9,69 +9,68 @@ allowed-tools: "*"
 
 Claude designs and implements (deep reasoning + codebase context).
 Codex validates (fast structured review + adversarial challenge).
-Fixes route back to the model best suited for each finding.
+**When either model is unavailable, the other takes over automatically.**
+
+## Cross-Model Fallback
+
+| Phase | Primary | Fallback |
+|-------|---------|----------|
+| Plan | Claude Opus | Codex task |
+| Build | Claude ralph | Codex rescue --write |
+| Review | Codex review | Claude code-reviewer |
+| Fix (simple) | Codex rescue | Claude ralph |
+| Fix (complex) | Claude ralph | Codex rescue |
 
 ## Workflow
 
 User request: $ARGUMENTS
 
-### Phase 1: Claude Plans (deep reasoning)
+### Phase 1: Plan
 
-Invoke `oh-my-claudecode:plan` with the user's request.
-Wait for the plan to be finalized.
+**Primary: Claude Opus** — Invoke `oh-my-claudecode:plan` with the user's request.
+
+**Fallback: Codex** — If Claude unavailable:
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" task --json "Design an implementation plan for: $ARGUMENTS. Output a numbered step-by-step plan."
+```
 
 Save the plan output — this becomes the implementation spec.
 
-### Phase 2: Claude Builds (multi-file context)
+### Phase 2: Build
 
-Claude understands the full codebase and can implement complex plans
-that touch multiple files with awareness of dependencies and side effects.
+**Primary: Claude ralph** — Claude understands the full codebase and can implement complex plans.
 
 Invoke `oh-my-claudecode:ralph` with:
-
 > Implement the following plan precisely. Run tests after each step.
->
-> [paste the full plan from Phase 1]
+> [plan from Phase 1]
 
-Wait for ralph to complete with passing tests.
+**Fallback: Codex** — If Claude unavailable (rate limit, quota, context limit):
+1. Check what's already implemented (git diff)
+2. Invoke `/codex:rescue --write` with remaining plan steps
 
-### Phase 3: Codex Reviews (cross-model validation)
+### Phase 3: Review
 
-A different model reviewing catches blind spots the builder might miss.
-Codex provides fast, structured review with consistent severity ratings.
-
-Run structured review:
+**Primary: Codex** — A different model reviewing catches blind spots.
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" review --wait --json
 ```
 
-**If Codex fails:** fall back to `oh-my-claudecode:code-reviewer` agent.
+**Fallback: Claude** — If Codex unavailable:
+Use `oh-my-claudecode:code-reviewer` agent.
 
-### Phase 4: Auto-Fix Loop (route by complexity)
+### Phase 4: Auto-Fix Loop
 
-Parse the review result:
-
-- If `verdict === "APPROVE"` or no `critical`/`high` findings:
-  - Report success with plan summary, implementation summary, and review verdict
-  - Done
-
-- If there are `critical`/`high` findings, route by type:
-  - **Quick scoped fixes** (1-2 files, clear location) → `/codex:rescue --resume`
-  - **Complex fixes** (architectural, multi-file) → `oh-my-claudecode:ralph`
-  - Re-run Codex review (go back to Phase 3)
-  - Max 3 fix cycles
+- If `verdict === "APPROVE"` or no `critical`/`high` findings → done
+- If there are findings, route by availability and complexity:
+  - **Claude available + complex** → ralph
+  - **Simple or Claude unavailable** → `/codex:rescue --resume`
+  - Re-run review, max 3 fix cycles
 
 ### Phase 5: Final Report
 
-Summarize to the user:
-- What was planned (Phase 1 — Claude)
-- What was built (Phase 2 — Claude ralph)
-- Review result (Phase 3 — Codex)
-- Fixes applied and by which model (Phase 4)
-
-## Fallback
-
-If Codex is not installed:
-- Phase 1-2: Claude (same — already Claude-primary)
-- Phase 3-4: Use Claude `code-reviewer` agent instead of Codex review
+Summarize:
+- What was planned (Phase 1) — by Claude or Codex
+- What was built (Phase 2) — by Claude or Codex
+- Review result (Phase 3) — by Codex or Claude
+- Fixes applied and by which model

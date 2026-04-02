@@ -1,5 +1,5 @@
 ---
-description: "Cross-model validation: Codex reviews (structured + adversarial) → Claude synthesizes and decides — leverages each model's unique perspective"
+description: "Cross-model validation: Codex reviews → Claude synthesizes — with fallback when either model is unavailable"
 argument-hint: "[focus area]"
 context: fork
 allowed-tools: "*"
@@ -9,53 +9,55 @@ allowed-tools: "*"
 
 Codex does what it's best at: fast structured analysis + adversarial edge-case hunting.
 Claude does what it's best at: synthesis, prioritization, and decision-making.
-Two different models examining the same code catches more issues than either alone.
+**When either model is unavailable, the other covers both roles.**
 
-## Role Assignment
+## Cross-Model Fallback
 
-- **Codex (structured review)**: Fast scan for bugs, security issues, correctness — JSON output with severity/file/line
-- **Codex (adversarial review)**: Challenge design assumptions, find edge cases, race conditions, failure modes
-- **Claude (synthesis)**: Merge both perspectives, deduplicate, prioritize by actual impact, decide next steps
+| Phase | Primary | Fallback |
+|-------|---------|----------|
+| Structured review | Codex review | Claude code-reviewer |
+| Adversarial review | Codex adversarial | Claude architect |
+| Synthesis | Claude | Codex task (summary prompt) |
+| Auto-fix (simple) | Codex rescue | Claude ralph |
+| Auto-fix (complex) | Claude ralph | Codex rescue |
 
 ## Workflow
 
 User request: $ARGUMENTS
 
-### Step 1: Codex Structured Review (implementation focus)
+### Step 1: Structured Review (implementation focus)
 
-Codex excels at systematic scanning with consistent structured output.
+**Primary: Codex** — Fast, consistent structured output.
 
-**Large-repo safety:** Check diff size first:
 ```bash
 DIFF_BYTES=$(git diff HEAD~1 2>/dev/null | wc -c || echo "0")
+SCOPE_FLAG=""
+[ "$DIFF_BYTES" -gt 500000 ] && SCOPE_FLAG="--scope working-tree"
+
+node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" review --wait --json $SCOPE_FLAG
 ```
+
+**Fallback: Claude** — `oh-my-claudecode:code-reviewer` agent.
+
+Save as `structured_review`.
+
+### Step 2: Adversarial Review (design focus)
+
+**Primary: Codex** — Skeptical stance, edge case finding.
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" review --wait --json
+node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" adversarial-review --wait --json $SCOPE_FLAG $ARGUMENTS
 ```
 
-**If Codex fails:** fall back to `oh-my-claudecode:code-reviewer` agent.
+**Fallback: Claude** — `oh-my-claudecode:architect` agent.
 
-Save the result as `structured_review`.
+Save as `adversarial_review`.
 
-### Step 2: Codex Adversarial Review (design focus)
+### Step 3: Synthesis (reasoning + prioritization)
 
-Codex's adversarial stance is excellent for skeptical analysis — it tries to break your code.
+**Primary: Claude** — Deep reasoning merges both reports.
 
-```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" adversarial-review --wait --json $ARGUMENTS
-```
-
-**If Codex fails:** fall back to `oh-my-claudecode:architect` agent.
-
-Save the result as `adversarial_review`.
-
-### Step 3: Claude Synthesizes (reasoning + prioritization)
-
-Claude's deep reasoning merges both Codex reports into actionable priorities.
-Deduplicate overlapping findings, assess actual impact, and rank by real-world severity.
-
-**Format:**
+Deduplicate, assess actual impact, rank by severity:
 
 ```
 ## Cross-Model Validation Report
@@ -73,23 +75,19 @@ Deduplicate overlapping findings, assess actual impact, and rank by real-world s
 - [concern from adversarial review]
 
 ### Summary
-- Structured review: X findings (Y critical, Z high)
-- Adversarial review: X concerns
-- Overall verdict: PASS / NEEDS WORK / BLOCK
+- Structured: X findings (Y critical, Z high)
+- Adversarial: X concerns
+- Overall: PASS / NEEDS WORK / BLOCK
 ```
 
-### Step 4: Route Fixes by Model Strength
+**Fallback: Codex** — If Claude is unavailable for synthesis:
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" task --json "Merge these two code review reports into a single prioritized action list. Deduplicate overlapping findings. Report 1: [structured_review]. Report 2: [adversarial_review]"
+```
 
-After presenting the report, ask the user:
+### Step 4: Route Fixes by Model Availability
 
 Use AskUserQuestion:
-- **Auto-fix critical issues** — Quick scoped fixes → Codex (`/codex:rescue --resume`), complex → Claude ralph
+- **Auto-fix critical** — Simple → Codex, complex → Claude (or Codex if Claude unavailable)
 - **I'll fix manually** — End here
-- **Run ralph to fix all** — Invoke `oh-my-claudecode:ralph` with all findings
-
-## Why Cross-Model Validation Works
-
-- Codex **reviews** because it provides a genuinely independent perspective from the model that built the code
-- Two Codex passes (structured + adversarial) cover both **implementation bugs** and **design flaws**
-- Claude **synthesizes** because prioritizing findings requires understanding the full project context and real-world impact
-- Fixes **route by complexity** so each model handles what it's fastest and most reliable at
+- **Run ralph to fix all** — Claude ralph (or Codex if Claude unavailable)
