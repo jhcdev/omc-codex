@@ -20,17 +20,20 @@ Claude and Codex each have distinct strengths. This plugin **assigns each model 
 **Work never stalls.**
 
 ```bash
-# One command: Claude plans → Claude builds → Codex reviews → auto-fixes
+# The complete forge: plan → blind TDD → build → stress harden → review → ship
+/omcx:forge implement payment processing with refund support
+
+# Quick feature with full cross-model pipeline
 /omcx:pipeline implement user notification system with email and slack
 
 # Claude grinds + Codex validates in a loop until both agree
 /omcx:auto-ralph fix all TypeScript errors and make tests pass
 
-# Claude designs + builds, Codex reviews, auto-fixes
-/omcx:auto-plan add refund feature to payment system
+# 3 Claude agents + 2 Codex agents build in parallel
+/omcx:team 3:claude:executor,2:codex implement the entire auth subsystem
 
-# Cross-model validation after any work
-/omcx:auto-validate
+# Adversarial hardening: Codex attacks, Claude defends
+/omcx:stress src/payment/processor.ts
 ```
 
 ---
@@ -50,8 +53,20 @@ git clone https://github.com/jhcdev/omc-codex.git ~/.claude/plugins/marketplaces
 # 4. Reload in Claude Code
 /reload-plugins
 
-# 5. Run your first pipeline:
-/omcx:pipeline add search feature to the API
+# 5. Run your first forge — the full cross-model experience:
+/omcx:forge add search feature to the API
+```
+
+### What just happened?
+
+```
+🧠 Claude planned the search architecture
+🧪 Codex wrote tests from spec (blind — never saw Claude's plan)
+🔨 Claude built the feature from tests (blind — tests were the spec)
+⚔️  Codex tried to break it with adversarial inputs
+🛡️  Claude fixed every vulnerability Codex found
+🔍 Codex gave a final structured review
+📊 Result: battle-tested code verified by two AI model families
 ```
 
 ## Configuration
