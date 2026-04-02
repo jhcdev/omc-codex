@@ -228,6 +228,45 @@ N Claude agents vs M Codex agents solve the same task independently. Compare all
 
 **When to use:** Critical code, multiple valid approaches, or when you want maximum solution diversity. All racers run in parallel — wall time ≈ slowest single racer.
 
+### `/omcx:blind-test` — Cross-Model TDD
+
+One model writes tests from spec only, the other implements from tests only. **They can't share blind spots.**
+
+```bash
+/omcx:blind-test implement rate limiter that handles burst traffic
+/omcx:blind-test --swap implement input validation for user registration
+/omcx:blind-test --test-writers 3 implement payment processing pipeline
+```
+
+**What happens:**
+1. Claude extracts a clean spec (no implementation hints)
+2. **Codex** writes tests from spec only (doesn't know how it'll be built)
+3. **Claude** implements from tests only (tests ARE the spec)
+4. Run tests — failures reveal blind spot differences between models
+5. Fix → retest → adversarial hardening until robust
+
+**Why this is unique:** Same-model TDD shares blind spots (tests don't test what code won't handle). Cross-model TDD forces genuinely independent perspectives.
+
+### `/omcx:stress` — Red Team vs Blue Team
+
+Codex attacks your code (adversarial tests), Claude defends (fixes). Iterative hardening.
+
+```bash
+/omcx:stress src/auth/middleware.ts
+/omcx:stress --focus concurrency src/cache/connection-pool.ts
+/omcx:stress --attackers 3 --rounds 5 src/payment/processor.ts
+```
+
+**What happens:**
+1. Claude analyzes attack surface (entry points, weak spots)
+2. **Codex (red team)** writes adversarial tests trying to crash/break the code
+3. **Claude (blue team)** fixes each vulnerability
+4. Codex escalates — tries harder each round
+5. Ends when red team can't break it anymore (or max rounds)
+6. All adversarial tests become **permanent regression tests**
+
+**Attack categories:** Boundary, concurrency, resource exhaustion, security (injection, auth bypass), state corruption, timing, malformed data.
+
 ### Agent Scaling Reference
 
 Both `/omcx:team` and `/omcx:race` support `N:model[:type]` syntax:
@@ -267,6 +306,8 @@ Both `/omcx:team` and `/omcx:race` support `N:model[:type]` syntax:
 | Quality check after work | `/omcx:auto-validate` | `/omcx:auto-validate` |
 | Mixed-model team build | `/omcx:team` | `/omcx:team 3:claude,2:codex add auth` |
 | Multi-agent competition | `/omcx:race` | `/omcx:race 2:claude,2:codex rate limiter` |
+| Cross-model TDD | `/omcx:blind-test` | `/omcx:blind-test implement auth middleware` |
+| Adversarial hardening | `/omcx:stress` | `/omcx:stress src/auth/` |
 
 ---
 
@@ -406,6 +447,8 @@ omc-codex/
 │   ├── adversarial-review.md    # Adversarial review
 │   ├── team.md                  # Team build + Codex verification
 │   ├── race.md                  # Dual-model parallel execution
+│   ├── blind-test.md             # Cross-model TDD
+│   ├── stress.md                # Red team vs blue team
 │   ├── rescue.md                # Task delegation
 │   ├── setup.md                 # Setup & review gate
 │   ├── status.md                # Job status
