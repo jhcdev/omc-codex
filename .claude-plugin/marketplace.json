@@ -1,0 +1,21 @@
+{
+  "name": "omc-codex",
+  "owner": {
+    "name": "jhcdev"
+  },
+  "metadata": {
+    "description": "Claude Code plugin for Codex CLI integration — delegate tasks, reviews, and rescue.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "codex",
+      "description": "Use Codex from Claude Code to review code or delegate tasks.",
+      "version": "1.0.0",
+      "author": {
+        "name": "jhcdev"
+      },
+      "source": "./"
+    }
+  ]
+}
