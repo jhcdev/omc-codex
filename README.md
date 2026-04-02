@@ -239,14 +239,35 @@ N Claude agents vs M Codex agents solve the same task independently. Compare all
 /omcx:forge --test-writers 3 --stress-rounds 7 --attackers 3 implement ledger reconciliation
 ```
 
-**What happens:**
-1. **Claude PLANS** the architecture (deep reasoning)
-2. **Codex writes TESTS** from spec only (blind — can't share Claude's assumptions)
-3. **Claude BUILDS** from tests only (blind — tests ARE the spec)
-4. **Codex ATTACKS** the code (adversarial stress testing)
-5. **Claude DEFENDS** and fixes (hardening)
-6. **Codex REVIEWS** the final code (structured + adversarial)
-7. **Claude SYNTHESIZES** everything into a confidence report
+**The full pipeline:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  /omcx:forge implement payment processing with refund support   │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Phase 1  🧠 Claude PLANS         deep reasoning → architecture │
+│              ↓ clean spec (no impl hints)                       │
+│  Phase 2  🧪 Codex writes TESTS   blind — spec only, no code   │
+│              ↓ test files (the contract)                        │
+│  Phase 3  🔨 Claude BUILDS        blind — tests only, no spec  │
+│              ↓ implementation                                   │
+│  Phase 4  ⚔️  Codex ATTACKS        adversarial stress testing    │
+│           🛡️  Claude DEFENDS       fix vulnerabilities           │
+│              ↓ hardened code        (repeat until unbreakable)  │
+│  Phase 5  🔍 Codex REVIEWS        structured + adversarial      │
+│              ↓ final fixes                                      │
+│  Phase 6  📊 Claude SYNTHESIZES   confidence report              │
+│                                                                 │
+│  Every phase: different model challenges the other's work       │
+│  Result: code verified by two independent AI model families     │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│  Combines: blind-test + stress + pipeline + auto-validate       │
+│  Presets:  --quick | (default) | --thorough                     │
+│  Scale:    --test-writers N  --attackers N  --builders N:M       │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 At every stage, a different model challenges the other's work. The code survives because it passed scrutiny from two independent AI model families. **No single-model system can produce this level of confidence.**
 
