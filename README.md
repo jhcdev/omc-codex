@@ -228,6 +228,34 @@ N Claude agents vs M Codex agents solve the same task independently. Compare all
 
 **When to use:** Critical code, multiple valid approaches, or when you want maximum solution diversity. All racers run in parallel — wall time ≈ slowest single racer.
 
+### `/omcx:forge` — The Complete Cross-Model Forge ⭐
+
+**One command, every omcx advantage.** Plan → blind TDD → build → stress harden → review → ship.
+
+```bash
+/omcx:forge implement payment processing with refund support
+/omcx:forge --thorough implement JWT token rotation with refresh flow
+/omcx:forge --quick add rate limiting to API endpoints
+/omcx:forge --test-writers 3 --stress-rounds 7 --attackers 3 implement ledger reconciliation
+```
+
+**What happens:**
+1. **Claude PLANS** the architecture (deep reasoning)
+2. **Codex writes TESTS** from spec only (blind — can't share Claude's assumptions)
+3. **Claude BUILDS** from tests only (blind — tests ARE the spec)
+4. **Codex ATTACKS** the code (adversarial stress testing)
+5. **Claude DEFENDS** and fixes (hardening)
+6. **Codex REVIEWS** the final code (structured + adversarial)
+7. **Claude SYNTHESIZES** everything into a confidence report
+
+At every stage, a different model challenges the other's work. The code survives because it passed scrutiny from two independent AI model families. **No single-model system can produce this level of confidence.**
+
+| Preset | Speed | Use Case |
+|--------|-------|----------|
+| `--quick` | Fast | Simple features |
+| (default) | Standard | Most features |
+| `--thorough` | Deep | Security-critical, financial code |
+
 ### `/omcx:blind-test` — Cross-Model TDD
 
 One model writes tests from spec only, the other implements from tests only. **They can't share blind spots.**
@@ -306,6 +334,7 @@ Both `/omcx:team` and `/omcx:race` support `N:model[:type]` syntax:
 | Quality check after work | `/omcx:auto-validate` | `/omcx:auto-validate` |
 | Mixed-model team build | `/omcx:team` | `/omcx:team 3:claude,2:codex add auth` |
 | Multi-agent competition | `/omcx:race` | `/omcx:race 2:claude,2:codex rate limiter` |
+| **All-in-one forge** | **`/omcx:forge`** | **`/omcx:forge implement payment system`** |
 | Cross-model TDD | `/omcx:blind-test` | `/omcx:blind-test implement auth middleware` |
 | Adversarial hardening | `/omcx:stress` | `/omcx:stress src/auth/` |
 
@@ -447,6 +476,7 @@ omc-codex/
 │   ├── adversarial-review.md    # Adversarial review
 │   ├── team.md                  # Team build + Codex verification
 │   ├── race.md                  # Dual-model parallel execution
+│   ├── forge.md                  # Complete cross-model forge
 │   ├── blind-test.md             # Cross-model TDD
 │   ├── stress.md                # Red team vs blue team
 │   ├── rescue.md                # Task delegation
