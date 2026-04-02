@@ -1,26 +1,37 @@
 # omc-codex
 
-> Bridge between oh-my-claudecode and OpenAI Codex — one command chains Claude planning, Codex building, structured reviews, and auto-fixes.
+> Bridge between oh-my-claudecode and OpenAI Codex — each model handles what it's best at, with automatic cross-model fallback when either is unavailable.
 
 ## Why omc-codex?
 
-Claude and Codex each have strengths. This plugin **chains them automatically** so you don't have to:
+Claude and Codex each have distinct strengths. This plugin **assigns each model to the role it excels at** and **automatically falls back** when either is unavailable:
+
+| Role | Primary | Fallback |
+|------|---------|----------|
+| Planning & architecture | Claude (deep reasoning) | Codex |
+| Complex implementation | Claude ralph (multi-file context) | Codex rescue --write |
+| Structured code review | Codex (fast, JSON output) | Claude code-reviewer |
+| Adversarial review | Codex (skeptical stance) | Claude architect |
+| Quick scoped fixes | Codex (sandboxed, fast) | Claude ralph |
+| Synthesis & decisions | Claude (prioritization) | Codex task |
+
+**When Claude hits rate limits, quota, or any error → Codex takes over automatically.**
+**When Codex is unavailable → Claude agents cover all roles.**
+**Work never stalls.**
 
 ```bash
-# One command: Claude plans → Codex builds → tests → reviews → fixes
+# One command: Claude plans → Claude builds → Codex reviews → auto-fixes
 /omcx:pipeline implement user notification system with email and slack
 
-# Ralph grinds + Codex validates in a loop until both are satisfied
+# Claude grinds + Codex validates in a loop until both agree
 /omcx:auto-ralph fix all TypeScript errors and make tests pass
 
-# Claude designs, Codex implements, Codex reviews, auto-fixes
+# Claude designs + builds, Codex reviews, auto-fixes
 /omcx:auto-plan add refund feature to payment system
 
 # Cross-model validation after any work
 /omcx:auto-validate
 ```
-
-**Without this plugin** you'd manually copy-paste between Claude Code and Codex CLI. **With it**, everything flows in one session — and falls back to Claude-only agents if Codex isn't installed.
 
 ---
 
@@ -39,7 +50,7 @@ git clone https://github.com/jhcdev/omc-codex.git ~/.claude/plugins/marketplaces
 # 4. Reload in Claude Code
 /reload-plugins
 
-# 5. Run your first auto-chaining pipeline:
+# 5. Run your first pipeline:
 /omcx:pipeline add search feature to the API
 ```
 
@@ -74,9 +85,45 @@ Add to `~/.claude/settings.json`:
 
 ---
 
+## Strength-Based Role Routing
+
+Each model is assigned to phases where it performs best:
+
+### Claude Code Strengths → Builder & Thinker
+
+- **Planning**: Handles ambiguous requirements, designs architecture with deep reasoning
+- **Complex implementation**: Multi-file changes with full codebase context (ralph loop)
+- **Debugging**: Reasoning chains for root-cause analysis
+- **Synthesis**: Merges multiple review reports, prioritizes by real-world impact
+
+### Codex Strengths → Reviewer & Validator
+
+- **Structured review**: Fast scan with consistent JSON output (severity/file/line)
+- **Adversarial review**: Skeptical stance, finds edge cases and failure modes
+- **Quick fixes**: Sandboxed, fast execution for well-scoped changes (1-2 files)
+- **Cross-model validation**: Different perspective catches blind spots
+
+### Cross-Model Fallback
+
+When one model is unavailable, the other covers all roles:
+
+| Situation | Behavior |
+|-----------|----------|
+| Claude rate-limited | Codex takes over build/plan/fix with `--write` |
+| Claude quota exhausted | Same — Codex continues all work |
+| Claude context limit | Codex takes over remaining steps |
+| Codex not installed | Claude agents handle review/validation |
+| Codex auth failure | Claude code-reviewer + architect agents |
+| Codex ENOBUFS/timeout | Claude agents as fallback reviewers |
+| Both unavailable | Stop and report — manual intervention needed |
+
+**Non-git directory support**: Codex adversarial review works in any directory, not just git repos. It walks the file tree and reviews all source files directly.
+
+---
+
 ## Auto-Chaining Commands
 
-The core of this plugin. Each command automatically chains omc skills with Codex actions.
+The core of this plugin. Each command automatically chains the right model to the right phase.
 
 ### `/omcx:pipeline` — Full Autonomous Delivery
 
@@ -89,16 +136,15 @@ Plan → build → test → review → fix. Idea to working, reviewed code in on
 ```
 
 **What happens:**
-1. Claude Opus plans the architecture
-2. Codex implements the plan
-3. omc ralph runs tests until green
-4. Codex runs structured + adversarial review
-5. Auto-fixes any critical/high findings
-6. Reports final summary
+1. **Claude Opus** plans the architecture (→ Codex if Claude unavailable)
+2. **Claude ralph** implements the plan (→ Codex rescue --write if rate-limited)
+3. **Codex** runs structured + adversarial review (→ Claude agents if Codex unavailable)
+4. **Fixes route by complexity**: simple → Codex, complex → Claude
+5. Reports final summary with which model handled each phase
 
-### `/omcx:auto-ralph` — Grind + Validate Loop
+### `/omcx:auto-ralph` — Build + Validate Loop
 
-Ralph persistence loop with automatic Codex review. Keeps going until tests pass AND review is clean.
+Claude builds, Codex validates. Keeps going until both models agree the work is done.
 
 ```bash
 /omcx:auto-ralph fix all TypeScript errors and make tests pass
@@ -107,14 +153,14 @@ Ralph persistence loop with automatic Codex review. Keeps going until tests pass
 ```
 
 **What happens:**
-1. Ralph grinds on the task
-2. When ralph thinks it's done → Codex reviews
-3. If review has critical findings → ralph fixes them
+1. **Claude ralph** grinds on the task (→ Codex --write if Claude unavailable)
+2. When build completes → **Codex** reviews automatically
+3. Critical findings → route back: complex to Claude, simple to Codex
 4. Repeats until both are satisfied (max 5 cycles)
 
 ### `/omcx:auto-plan` — Design to Delivery
 
-Claude plans → Codex builds → Codex reviews → auto-fix cycle.
+Claude designs and builds, Codex reviews, auto-fix cycle.
 
 ```bash
 /omcx:auto-plan add refund feature to payment system
@@ -123,14 +169,14 @@ Claude plans → Codex builds → Codex reviews → auto-fix cycle.
 ```
 
 **What happens:**
-1. Claude Opus designs the architecture
-2. Codex implements based on the plan
-3. Codex runs structured review
-4. Auto-fixes review findings (max 3 cycles)
+1. **Claude Opus** designs the architecture (→ Codex if unavailable)
+2. **Claude ralph** implements the plan (→ Codex --write if unavailable)
+3. **Codex** runs structured review (→ Claude code-reviewer if unavailable)
+4. Auto-fixes review findings, routing by complexity (max 3 cycles)
 
 ### `/omcx:auto-validate` — Cross-Model QA
 
-Run after any workflow. Two Codex reviews + Claude synthesis into prioritized action plan.
+Two Codex reviews + Claude synthesis into prioritized action plan.
 
 ```bash
 /omcx:auto-validate
@@ -139,9 +185,9 @@ Run after any workflow. Two Codex reviews + Claude synthesis into prioritized ac
 ```
 
 **What happens:**
-1. Codex structured review (implementation bugs)
-2. Codex adversarial review (design weaknesses)
-3. Claude synthesizes both into fix-now / fix-later action plan
+1. **Codex** structured review — implementation bugs (→ Claude code-reviewer)
+2. **Codex** adversarial review — design weaknesses (→ Claude architect)
+3. **Claude** synthesizes both into fix-now / fix-later priorities (→ Codex if unavailable)
 4. Offers auto-fix, manual fix, or ralph fix
 
 ### Command Selection Guide
@@ -170,6 +216,8 @@ For fine-grained control, use individual commands and chain them yourself.
 /omcx:adversarial-review --wait      # Challenge design assumptions
 /omcx:adversarial-review --wait auth flow and session handling
 ```
+
+**Note:** `/omcx:adversarial-review` works in non-git directories too — it scans files directly.
 
 ### Task Delegation
 
@@ -238,54 +286,42 @@ Chain omc skills with omcx commands for custom workflows.
 
 ---
 
-## Without Codex Installed
-
-Every command gracefully falls back:
-
-| Situation | Behavior |
-|-----------|----------|
-| Codex not installed | Uses Claude agents instead |
-| Codex not authenticated | Prompts `!codex login` + Claude fallback |
-| Codex runtime error | Reroutes to Claude |
-| No omc either | Manual commands still work standalone |
-
----
-
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────┐
-│  Claude Code Session                              │
-│                                                   │
-│  ┌───────────┐  ┌─────────────┐  ┌────────────┐ │
-│  │ omc       │  │ omcx        │  │ Codex CLI  │ │
-│  │           │  │ (bridge)    │  │            │ │
-│  │ plan ─────┼──┼→ rescue ────┼──┼→ implement │ │
-│  │ ralph ────┼──┼→ review ────┼──┼→ validate  │ │
-│  │ team ─────┼──┼→ adv-review ┼──┼→ challenge │ │
-│  │ autopilot │  │ gate ───────┼──┼→ enforce   │ │
-│  │ deep-dive │  │             │  │            │ │
-│  │           │  │  auto-ralph │  │            │ │
-│  │           │  │  auto-plan  │  │            │ │
-│  │           │  │  auto-val   │  │            │ │
-│  │           │  │  pipeline   │  │            │ │
-│  │           │  │  (fallback) │  │            │ │
-│  │           │  │  → Claude ──┼──┘            │ │
-│  └───────────┘  └─────────────┘  └────────────┘ │
-└──────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│  Claude Code Session                                  │
+│                                                       │
+│  ┌───────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │ Claude    │  │ omcx         │  │ Codex CLI    │  │
+│  │ (builder) │  │ (router)     │  │ (validator)  │  │
+│  │           │  │              │  │              │  │
+│  │ plan ─────┼──┼→ pipeline ───┼──┼→ review      │  │
+│  │ ralph ────┼──┼→ auto-ralph ─┼──┼→ validate    │  │
+│  │ ultrawork │  │  auto-plan ──┼──┼→ adversarial │  │
+│  │ architect │  │  auto-val ───┼──┼→ challenge   │  │
+│  │           │  │              │  │              │  │
+│  │ ◄─────────┼──┼─ fallback ◄──┼──┼─ fallback    │  │
+│  │ (covers   │  │ (routes to   │  │ (covers      │  │
+│  │  Codex    │  │  available   │  │  Claude      │  │
+│  │  roles)   │  │  model)      │  │  roles)      │  │
+│  └───────────┘  └──────────────┘  └──────────────┘  │
+└──────────────────────────────────────────────────────┘
 ```
 
 ## What This Adds (beyond omc alone)
 
 | Capability | omc only | omc + omcx |
 |------------|----------|------------|
-| Code review | Claude text review | Codex structured JSON (severity/file/line/confidence) |
+| Role routing | Single model | Strength-based: Claude builds, Codex reviews |
+| Code review | Claude text review | Codex structured JSON (severity/file/line) |
 | Design validation | Manual prompting | Adversarial review with dedicated prompts |
 | Review enforcement | None | Stop-time review gate (BLOCK/ALLOW) |
-| Task delegation | Claude agents | Codex + Claude (cross-model) |
-| Thread continuity | Per-session | `--resume` across Codex threads |
+| Rate limit handling | Session stops | Auto-fallback to Codex — work continues |
+| Cross-model validation | N/A | Two different models checking same code |
+| Non-git review | N/A | Directory-based file scan for any project |
 | Auto-chaining | Manual multi-step | One command: pipeline, auto-ralph, auto-plan |
-| Failure handling | N/A | Graceful fallback to Claude agents |
+| Failure handling | N/A | Bidirectional fallback: Claude ↔ Codex |
 
 ## File Structure
 
