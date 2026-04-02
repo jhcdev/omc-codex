@@ -1,8 +1,17 @@
 {
   "name": "codex",
-  "version": "1.0.2",
-  "description": "Use Codex from Claude Code to review code or delegate tasks.",
+  "version": "1.1.0",
+  "description": "Bridge between oh-my-claudecode and OpenAI Codex — auto-chaining workflows for plan, build, review, and validate.",
   "author": {
-    "name": "OpenAI"
-  }
+    "name": "jhcdev"
+  },
+  "repository": "https://github.com/jhcdev/omc-codex",
+  "keywords": [
+    "codex",
+    "omc",
+    "oh-my-claudecode",
+    "code-review",
+    "cross-model",
+    "pipeline"
+  ]
 }

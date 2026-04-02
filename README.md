@@ -189,6 +189,67 @@ omc autopilot runs the full pipeline, Codex validates with a different model.
 
 ---
 
+## Auto-Chaining Commands (NEW in v1.1)
+
+These commands automatically chain omc skills with Codex — no manual copy-paste between tools.
+
+### `/codex:auto-ralph`
+Ralph persistence loop + automatic Codex review. Ralph grinds until done, Codex validates, findings go back to ralph. Repeats until both are satisfied.
+
+```bash
+# Ralph fixes + Codex reviews in a loop until clean
+/codex:auto-ralph fix all TypeScript errors and make tests pass
+
+# Ralph implements + Codex validates the implementation
+/codex:auto-ralph implement retry logic for all API calls
+```
+
+### `/codex:auto-plan`
+Full cycle: Claude plans → Codex builds → Codex reviews → auto-fix. One command, end-to-end.
+
+```bash
+# Claude designs, Codex implements, Codex reviews, auto-fixes
+/codex:auto-plan add refund feature to payment system
+
+# Architecture to working code in one command
+/codex:auto-plan implement search API with elasticsearch
+```
+
+### `/codex:auto-validate`
+Cross-model validation after any workflow. Runs Codex structured + adversarial review, Claude synthesizes into a prioritized action plan.
+
+```bash
+# After finishing any work, cross-validate
+/codex:auto-validate
+
+# Focus on specific area
+/codex:auto-validate auth flow and session handling
+```
+
+### `/codex:pipeline`
+Full autonomous pipeline: plan → build → test → review → fix. Chains everything end-to-end.
+
+```bash
+# Idea to reviewed, tested, working code
+/codex:pipeline implement user notification system with email and slack
+
+# Full autonomous feature delivery
+/codex:pipeline add rate limiting to all public API endpoints
+```
+
+### Auto-Chaining vs Manual Patterns
+
+| Command | What it chains | When to use |
+|---------|---------------|-------------|
+| `/codex:auto-ralph` | ralph ↔ Codex review loop | Grinding tasks that need quality validation |
+| `/codex:auto-plan` | plan → rescue → review → fix | New features from scratch |
+| `/codex:auto-validate` | review + adversarial + synthesis | Post-work quality check |
+| `/codex:pipeline` | plan → build → test → review → fix | Full autonomous delivery |
+
+All commands fall back to Claude-only agents if Codex is unavailable.
+
+---
+
 ## Command Reference
 
 ### Code Review

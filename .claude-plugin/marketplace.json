@@ -4,14 +4,14 @@
     "name": "jhcdev"
   },
   "metadata": {
-    "description": "Claude Code plugin for Codex CLI integration — delegate tasks, reviews, and rescue.",
-    "version": "1.0.0"
+    "description": "Bridge between oh-my-claudecode and OpenAI Codex — auto-chaining workflows for plan, build, review, and validate.",
+    "version": "1.1.0"
   },
   "plugins": [
     {
       "name": "codex",
-      "description": "Use Codex from Claude Code to review code or delegate tasks.",
-      "version": "1.0.0",
+      "description": "Auto-chaining omc + Codex workflows: auto-ralph, auto-plan, auto-validate, pipeline.",
+      "version": "1.1.0",
       "author": {
         "name": "jhcdev"
       },
