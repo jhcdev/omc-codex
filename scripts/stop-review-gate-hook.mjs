@@ -106,7 +106,8 @@ function runStopReview(cwd, input = {}) {
     cwd,
     env: childEnv,
     encoding: "utf8",
-    timeout: STOP_REVIEW_TIMEOUT_MS
+    timeout: STOP_REVIEW_TIMEOUT_MS,
+    maxBuffer: 50 * 1024 * 1024 // 50 MB — prevent ENOBUFS on large repos
   });
 
   if (result.error?.code === "ETIMEDOUT") {

@@ -1,6 +1,8 @@
 import { spawnSync } from "node:child_process";
 import process from "node:process";
 
+const DEFAULT_MAX_BUFFER = 50 * 1024 * 1024; // 50 MB
+
 export function runCommand(command, args = [], options = {}) {
   const result = spawnSync(command, args, {
     cwd: options.cwd,
@@ -9,7 +11,8 @@ export function runCommand(command, args = [], options = {}) {
     input: options.input,
     stdio: options.stdio ?? "pipe",
     shell: process.platform === "win32",
-    windowsHide: true
+    windowsHide: true,
+    maxBuffer: options.maxBuffer ?? DEFAULT_MAX_BUFFER
   });
 
   return {
