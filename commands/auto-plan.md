@@ -1,5 +1,5 @@
 ---
-description: "Claude plans & builds → Codex reviews → auto-fix — with automatic cross-model fallback when either is unavailable"
+description: "Claude plans & executes → Codex reviews → auto-fix — works for features, fixes, refactoring, and any task needing design-first approach. Auto cross-model fallback"
 argument-hint: "<feature or task description>"
 context: fork
 allowed-tools: "*"

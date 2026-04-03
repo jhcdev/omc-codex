@@ -1,5 +1,5 @@
 ---
-description: "Claude grinds (ralph) → Codex validates — with automatic Codex takeover when Claude is unavailable"
+description: "Claude iterates until done → Codex validates — works for any task needing persistence: features, bugs, refactoring, migration. Auto Codex fallback"
 argument-hint: "<task description>"
 context: fork
 allowed-tools: "*"

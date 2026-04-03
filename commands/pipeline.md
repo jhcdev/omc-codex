@@ -1,5 +1,5 @@
 ---
-description: "Full autonomous pipeline: plan → build → test → review → fix — routes to each model's strength, with automatic cross-model fallback"
+description: "Full autonomous pipeline for ANY task — plan → execute → verify → review → fix. Routes each phase to the best model, with automatic cross-model fallback"
 argument-hint: "<feature or task description>"
 context: fork
 allowed-tools: "*"

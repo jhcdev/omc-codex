@@ -1,5 +1,5 @@
 ---
-description: "Blind TDD: one model writes tests from spec only, the other implements from tests only — different models can't share blind spots"
+description: "Blind TDD: one model writes tests/checks from spec, the other implements/fixes from those tests — works for new features, bug fixes, refactoring, and any task where independent verification matters"
 argument-hint: "<spec or feature description>"
 context: fork
 allowed-tools: "*"

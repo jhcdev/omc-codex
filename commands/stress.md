@@ -1,5 +1,5 @@
 ---
-description: "Red vs Blue: Codex attacks (writes adversarial tests/inputs), Claude defends (fixes) — iterative hardening that only cross-model can do"
+description: "Red vs Blue: Codex challenges (adversarial tests, edge cases, attack vectors), Claude defends (fixes) — works for hardening any code, debugging, security review, and quality assurance"
 argument-hint: "<code path or feature to stress-test>"
 context: fork
 allowed-tools: "*"
