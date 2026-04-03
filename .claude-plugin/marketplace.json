@@ -4,14 +4,14 @@
     "name": "jhcdev"
   },
   "metadata": {
-    "description": "Bridge between oh-my-claudecode and OpenAI Codex — auto-chaining workflows for plan, build, review, and validate.",
-    "version": "1.1.0"
+    "description": "Cross-model orchestration for Claude Code — Claude builds, Codex validates. Blind TDD, adversarial stress testing, mixed-model teams, and automatic fallback.",
+    "version": "2.0.0"
   },
   "plugins": [
     {
       "name": "omcx",
-      "description": "Auto-chaining omc + Codex workflows: auto-ralph, auto-plan, auto-validate, pipeline.",
-      "version": "1.1.0",
+      "description": "Cross-model forge, blind TDD, adversarial stress testing, mixed-model teams, race, pipeline, and auto-chaining workflows.",
+      "version": "2.0.0",
       "author": {
         "name": "jhcdev"
       },

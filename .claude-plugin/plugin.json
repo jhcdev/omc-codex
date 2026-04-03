@@ -1,7 +1,7 @@
 {
   "name": "omcx",
-  "version": "1.1.0",
-  "description": "Bridge between oh-my-claudecode and OpenAI Codex — auto-chaining workflows for plan, build, review, and validate.",
+  "version": "2.0.0",
+  "description": "Cross-model orchestration for Claude Code — Claude builds, Codex validates. Blind TDD, adversarial stress testing, mixed-model teams, and automatic fallback.",
   "author": {
     "name": "jhcdev"
   },
