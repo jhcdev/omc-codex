@@ -1,20 +1,25 @@
 ---
-description: "Forge: the complete cross-model software forge — plan → blind TDD → build → stress harden → review → ship. One command, all omcx strengths combined."
-argument-hint: "<feature or task description>"
+description: "Forge: the ultimate cross-model workflow for ANY task — plan → test → build → harden → review. Works for features, bugs, refactoring, analysis, debugging, and everything in between."
+argument-hint: "<any task description>"
 context: fork
 allowed-tools: "*"
 ---
 
-# Forge: The Cross-Model Software Forge
+# Forge: The Cross-Model Forge
 
-**One command. Every omcx advantage. From idea to battle-tested code.**
+**One command. Every omcx advantage. Works for any task.**
 
-Forge chains every cross-model capability into a single pipeline:
-blind TDD, adversarial hardening, cross-model review, strength-based routing,
-and automatic fallback. The result is code that has been independently tested,
-attacked, reviewed, and verified by two different AI model families.
+Forge chains every cross-model capability into a single pipeline.
+It works for any task: new features, bug fixes, refactoring, debugging,
+analysis, migration, or anything else you throw at it.
 
-**No single-model system can produce this level of confidence.**
+Each phase adapts to the task:
+- For new features: full blind TDD → build → stress → review
+- For bug fixes: analyze → test the fix → harden → review
+- For refactoring: plan → build → stress existing tests → review
+- For analysis/debugging: plan → investigate → cross-model verify findings
+
+**Two different AI models challenge each other's work at every stage.**
 
 ## What Makes Forge Unique
 
